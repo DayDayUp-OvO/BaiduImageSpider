@@ -16,7 +16,7 @@ params = {
     'tn': 'resultjson_com',
     'fp': 'detail',
     'word': KEY_WORD,
-    'hd': '1',
+    # 'hd': '1',
     'pn': '0',
     'rn': '60',
 }

@@ -3,13 +3,13 @@ import typing as t
 
 import aiohttp
 
-from settings import BASE_HEADERS
+from settings import BASE_HEADERS, SEMAPHORE
 
 
 class Spider:
     def __init__(self):
         self.base_headers: t.Dict[str, str] = BASE_HEADERS
-        self.semaphore = asyncio.Semaphore(50)
+        self.semaphore = asyncio.Semaphore(SEMAPHORE)
 
     async def __aenter__(self):
         self.session = aiohttp.ClientSession(headers=self.base_headers)
