@@ -9,7 +9,7 @@ from image_spider.baidu_spider import run_task
 parser = argparse.ArgumentParser(usage='\n\tpython main.py -k 张婧仪 赵今麦 周也')
 
 parser.add_argument('-k', '--key', nargs='+', type=str, dest='key', required=True, help='检索词')
-parser.add_argument('-hd', '--hd', dest='hd', type=int, default=DEFAULT_ONLY_HD, help='是否只下载高清, 0: 否, 1: 是')
+parser.add_argument('-hd', '--hd', dest='hd', type=int, default=DEFAULT_ONLY_HD, help='是否只下载高清图片, 0: 否, 1: 是')
 parser.add_argument('-o', '--output', dest='output', type=str, default=DEFAULT_SAVE_PATH, help='输出文件夹路径')
 parser.add_argument('-s', '--semaphore', dest='semaphore', type=int, default=DEFAULT_SEMAPHORE, help='最大并发请求数')
 
