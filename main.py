@@ -1,95 +1,35 @@
 import time
-import uuid
 import asyncio
-import typing as t
-from copy import deepcopy
+import argparse
 from pathlib import Path
 
-import requests
-import aiofiles
+from settings import DEFAULT_SAVE_PATH, DEFAULT_SEMAPHORE, DEFAULT_ONLY_HD
+from image_spider.baidu_spider import run_task
 
-from spider import Spider
-from settings import KEY_WORD, SAVE_PATH
+parser = argparse.ArgumentParser(usage='\n\tpython main.py -k 张婧仪 赵今麦 周也')
 
-task_queue = asyncio.Queue()
-params = {
-    'tn': 'resultjson_com',
-    'fp': 'detail',
-    'word': KEY_WORD,
-    # 'hd': '1',
-    'pn': '0',
-    'rn': '60',
-}
+parser.add_argument('-k', '--key', nargs='+', type=str, dest='key', required=True, help='检索词')
+parser.add_argument('-hd', '--hd', dest='hd', type=int, default=DEFAULT_ONLY_HD, help='是否只下载高清, 0: 否, 1: 是')
+parser.add_argument('-o', '--output', dest='output', type=str, default=DEFAULT_SAVE_PATH, help='输出文件夹路径')
+parser.add_argument('-s', '--semaphore', dest='semaphore', type=int, default=DEFAULT_SEMAPHORE, help='最大并发请求数')
 
-Path(SAVE_PATH).mkdir(parents=True, exist_ok=True)
+args = parser.parse_args()
 
+key_words = args.key
+only_hd = args.hd
+semaphore = args.semaphore
+save_path = args.output
 
-def get_image_num() -> int:
-    """
-    获取图片总数
-    """
-    resp: requests.Response = requests.get('https://image.baidu.com/search/acjson', params=params)
-    resp_json: dict = resp.json()
-    return resp_json['listNum']
-
-
-def get_params() -> t.Generator:
-    """
-    获取请求参数
-    """
-    image_num = get_image_num()
-    print(f'检索到{image_num}张图片')
-    for _ in range((image_num // 60) + 1):
-        _params = deepcopy(params)
-        _params.update({
-            'pn': str(_ * 60)
-        })
-        yield _params
-
-
-async def producer(_url, _params, spider) -> None:
-    """
-    生成图片任务
-    """
-    resp_json: dict = await spider.get(
-        _url=_url,
-        _params=_params
-    )
-    for _ in resp_json['data']:
-        if _:
-            await task_queue.put(_['thumbURL'])
-
-
-async def consumer(_url, spider) -> None:
-    """
-    消费图片任务
-    """
-    resp_data = await spider.get(_url)
-    async with aiofiles.open(Path(SAVE_PATH).joinpath(f'{uuid.uuid1()}.png'), 'wb') as f:
-        await f.write(resp_data)
-
-
-async def main():
-    async with Spider() as spider:
-        print('获取所有图片链接。。。')
-        async with asyncio.TaskGroup() as tg:
-            for _params in get_params():
-                tg.create_task(producer(
-                    _url='https://image.baidu.com/search/acjson',
-                    _params=_params,
-                    spider=spider
-                ))
-        print('获取所有图片链接成功！\n开始下载图片。。。')
-        async with asyncio.TaskGroup() as tg:
-            while not task_queue.empty():
-                task = await task_queue.get()
-                tg.create_task(consumer(
-                    task,
-                    spider
-                ))
-        print('图片下载完成！')
+assert only_hd in [0, 1], '-hd参数只可以输入0/1'
+print(f'检索词：{", ".join(key_words)}\n图片保存路径：{save_path}')
+[Path(save_path).joinpath(key_word).mkdir(parents=True, exist_ok=True) for key_word in key_words]
 
 if __name__ == '__main__':
     start_time = time.time()
-    asyncio.run(main())
-    print(f'总耗时：{time.time() - start_time:.2f}s')
+    asyncio.run(run_task(**{
+        'key_words': key_words,
+        'only_hd': [False, True][only_hd],
+        'semaphore': semaphore,
+        'save_path': save_path
+    }))
+    print(f'任务总耗时：{time.time() - start_time:.2f}s')

@@ -6,6 +6,5 @@
 #### 依赖
 - python3.11
 - requirements.txt
-#### 使用
-- settings.py修改检索关键词、文件存储路径
-- 运行main.py
+#### 运行
+>python main.py -k 张婧仪 赵今麦 周也
